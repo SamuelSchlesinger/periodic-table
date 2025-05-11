@@ -72,9 +72,10 @@ impl PeriodicTableUi {
         // Calculate cell size based on available area
         let rows = self.table_layout.len();
         let cols = if rows > 0 { self.table_layout[0].len() } else { 0 };
-        
-        let cell_width = 5;
-        let cell_height = 3;
+
+        // Set cell size for proper border alignment
+        let cell_width = 6;  // Adjusted for proper border alignment
+        let cell_height = 4; // Height for atomic number and symbol
         
         let total_width = cols * cell_width;
         let total_height = rows * cell_height;
@@ -91,6 +92,7 @@ impl PeriodicTableUi {
                     let cell_y = y_offset + (row_idx * cell_height) as u16;
                     
                     if cell_x + cell_width as u16 <= area.width && cell_y + cell_height as u16 <= area.height {
+                        // Create cell rectangle with exact dimensions to ensure borders align
                         let cell_rect = Rect::new(
                             area.x + cell_x,
                             area.y + cell_y,
@@ -109,42 +111,18 @@ impl PeriodicTableUi {
                         let brightness = (r as u16 + g as u16 + b as u16) / 3;
                         let text_color = if brightness > 128 { Color::Black } else { Color::White };
 
-                        let (_border_style, text_style) = if is_selected {
-                            (
-                                // Make the border the same color as the background for seamless display
-                                Style::default().fg(bg_color).bg(bg_color),
-                                // Use contrasting color with increased intensity
-                                Style::default().fg(text_color).bg(bg_color)
-                                    .add_modifier(Modifier::BOLD)
-                            )
-                        } else {
-                            (
-                                Style::default().fg(bg_color).bg(bg_color),
-                                Style::default().fg(text_color).bg(bg_color)
-                            )
-                        };
+                        // Determine if we need to make the text bold for selected items
+                        let text_bold = is_selected;
                         
-                        // Element content
-                        let symbol = Line::from(vec![
-                            Span::styled(
-                                element.symbol.clone(),
-                                text_style
-                            )
-                        ]);
-                        
-                        // Add atomic number on a separate line
-                        let atomic_number = Line::from(vec![
-                            Span::styled(
-                                element.number.to_string(),
-                                text_style
-                            )
-                        ]);
+                        // Element content - using plain strings (styling is handled by the block)
+                        let symbol = Line::from(element.symbol.clone());
 
-                        
-                        // Create a custom block with either a background for selection or no border
+                        // Add atomic number on a separate line (styling is handled by the block)
+                        let atomic_number = Line::from(element.number.to_string());
+
+                        // Create a block with black borders for all elements
                         let element_block = if is_selected {
-                            // For selected elements, use a light underscore character border
-                            // and make it the same color as the background to avoid black lines
+                            // For selected elements, use a highlighted background
                             let highlight_bg = if brightness > 128 {
                                 // For light backgrounds, darken slightly
                                 Color::Rgb((r as u16 * 85 / 100) as u8,
@@ -157,15 +135,33 @@ impl PeriodicTableUi {
                                           b.saturating_add(40))
                             };
 
-                            Block::default()
-                                .style(Style::default().bg(highlight_bg))
+                            let style = Style::default()
+                                .bg(highlight_bg)
+                                .fg(text_color);
+
+                            if text_bold {
+                                Block::default()
+                                    .borders(Borders::ALL)
+                                    .border_style(Style::default().fg(Color::Black))
+                                    .style(style.add_modifier(Modifier::BOLD))
+                            } else {
+                                Block::default()
+                                    .borders(Borders::ALL)
+                                    .border_style(Style::default().fg(Color::Black))
+                                    .style(style)
+                            }
                         } else {
+                            let style = Style::default()
+                                .bg(bg_color)
+                                .fg(text_color);
+
                             Block::default()
-                                .borders(Borders::NONE)
-                                .style(Style::default().bg(bg_color))
+                                .borders(Borders::ALL)
+                                .border_style(Style::default().fg(Color::Black))
+                                .style(style)
                         };
 
-                        // Create element widget
+                        // Create element widget with padding set to 0 to remove margins
                         let element_widget = Paragraph::new(vec![
                             atomic_number,  // Show atomic number first
                             symbol,         // Then element symbol
@@ -337,8 +333,8 @@ impl PeriodicTableUi {
             }) => {
                 // Convert mouse coordinates to table coordinates
                 // This is simplified and would need adjustment based on actual rendering
-                let cell_width = 5;
-                let cell_height = 3;
+                let cell_width = 6;  // Updated to match render_table
+                let cell_height = 4; // Updated to match render_table
                 
                 // Calculate table offset
                 let rows = self.table_layout.len();
