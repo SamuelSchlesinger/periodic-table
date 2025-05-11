@@ -106,14 +106,14 @@ impl PeriodicTableUi {
                         let is_selected = self.cursor_position == (row_idx, col_idx);
                         let (border_style, text_style) = if is_selected {
                             (
-                                Style::default().fg(Color::White).bg(bg_color)
-                                    .add_modifier(Modifier::BOLD),
+                                Style::default().fg(bg_color).bg(bg_color)
+                                    .add_modifier(Modifier::BOLD | Modifier::REVERSED),
                                 Style::default().fg(Color::White).bg(bg_color)
                                     .add_modifier(Modifier::BOLD)
                             )
                         } else {
                             (
-                                Style::default().fg(Color::White).bg(bg_color),
+                                Style::default().fg(bg_color).bg(bg_color),
                                 Style::default().fg(Color::Black).bg(bg_color)
                             )
                         };
@@ -127,13 +127,22 @@ impl PeriodicTableUi {
                         ]);
 
                         
+                        // Create a custom block with no borders for seamless appearance
+                        let element_block = if is_selected {
+                            Block::default()
+                                .borders(Borders::ALL)
+                                .border_style(border_style)
+                        } else {
+                            Block::default()
+                                .borders(Borders::NONE)
+                                .style(Style::default().bg(bg_color))
+                        };
+
                         // Create element widget
                         let element_widget = Paragraph::new(vec![
                             symbol,
                         ])
-                        .block(Block::default()
-                            .borders(Borders::ALL)
-                            .border_style(border_style))
+                        .block(element_block)
                         .alignment(ratatui::layout::Alignment::Center);
                         
                         frame.render_widget(element_widget, cell_rect);
