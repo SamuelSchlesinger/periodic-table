@@ -104,17 +104,23 @@ impl PeriodicTableUi {
                         
                         // Highlight selected element
                         let is_selected = self.cursor_position == (row_idx, col_idx);
-                        let (border_style, text_style) = if is_selected {
+                        // Determine a good contrasting color for the text
+                        // For lighter background colors, use black; for darker ones, use white
+                        let brightness = (r as u16 + g as u16 + b as u16) / 3;
+                        let text_color = if brightness > 128 { Color::Black } else { Color::White };
+
+                        let (_border_style, text_style) = if is_selected {
                             (
-                                Style::default().fg(bg_color).bg(bg_color)
-                                    .add_modifier(Modifier::BOLD | Modifier::REVERSED),
-                                Style::default().fg(Color::White).bg(bg_color)
+                                // Make the border the same color as the background for seamless display
+                                Style::default().fg(bg_color).bg(bg_color),
+                                // Use contrasting color with increased intensity
+                                Style::default().fg(text_color).bg(bg_color)
                                     .add_modifier(Modifier::BOLD)
                             )
                         } else {
                             (
                                 Style::default().fg(bg_color).bg(bg_color),
-                                Style::default().fg(Color::Black).bg(bg_color)
+                                Style::default().fg(text_color).bg(bg_color)
                             )
                         };
                         
@@ -127,11 +133,24 @@ impl PeriodicTableUi {
                         ]);
 
                         
-                        // Create a custom block with no borders for seamless appearance
+                        // Create a custom block with either a background for selection or no border
                         let element_block = if is_selected {
+                            // For selected elements, use a light underscore character border
+                            // and make it the same color as the background to avoid black lines
+                            let highlight_bg = if brightness > 128 {
+                                // For light backgrounds, darken slightly
+                                Color::Rgb((r as u16 * 85 / 100) as u8,
+                                          (g as u16 * 85 / 100) as u8,
+                                          (b as u16 * 85 / 100) as u8)
+                            } else {
+                                // For dark backgrounds, brighten slightly
+                                Color::Rgb(r.saturating_add(40),
+                                          g.saturating_add(40),
+                                          b.saturating_add(40))
+                            };
+
                             Block::default()
-                                .borders(Borders::ALL)
-                                .border_style(border_style)
+                                .style(Style::default().bg(highlight_bg))
                         } else {
                             Block::default()
                                 .borders(Borders::NONE)
