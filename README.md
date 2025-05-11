@@ -2,8 +2,6 @@
 
 An interactive periodic table of elements built with Rust using the Ratatui and Crossterm libraries.
 
-![Screenshot of the periodic table TUI](screenshot.png)
-
 ## Features
 
 - Interactive periodic table with color-coded elements based on element categories
